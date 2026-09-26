@@ -1,1 +1,77 @@
+name: Build Android APK
 
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Preserve project source
+        run: |
+          mkdir -p /tmp/mathradar_source
+          cp pubspec.yaml /tmp/mathradar_source/pubspec.yaml
+          cp -R lib /tmp/mathradar_source/lib
+          cp -R test /tmp/mathradar_source/test
+
+      - name: Generate Android project files
+        run: flutter create --platforms=android --org com.mathradar --project-name math_radar .
+
+      - name: Restore MathRadar source
+        run: |
+          cp /tmp/mathradar_source/pubspec.yaml pubspec.yaml
+          rm -rf lib test
+          cp -R /tmp/mathradar_source/lib lib
+          cp -R /tmp/mathradar_source/test test
+
+      - name: Enable Android internet permission
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q 'android.permission.INTERNET' "$MANIFEST"; then
+            sed -i '/<manifest/a\    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST"
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build release APK
+        run: >-
+          flutter build apk --release
+          --dart-define=SUPABASE_URL="$SUPABASE_URL"
+          --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk MathRadar.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathRadar-Android
+          path: MathRadar.apk
+          if-no-files-found: error
+          retention-days: 30
