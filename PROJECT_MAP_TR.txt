@@ -1,0 +1,12 @@
+MATHRADAR V0.1
+
+lib/main.dart                     Uygulamanin baslangici, Supabase init
+lib/app.dart                      Tema ve root widget
+lib/config/app_config.dart        GitHub build-time konfigurasyonu
+lib/screens/home_screen.dart      Ogretmen dashboard
+lib/screens/student_detail_screen.dart Ogrenci gelisimi + Hata DNA'si
+lib/screens/lesson_screen.dart    Ders sirasinda hizli sonuc girisi
+lib/screens/parent_dashboard_screen.dart Veli onizleme ekrani
+supabase/schema.sql               Veritabani tablolari + RLS
+.github/workflows/build-apk.yml   GitHub Actions APK pipeline
+GITHUB_STEPS_TR.md                Adim adim GitHub / Supabase kilavuzu
